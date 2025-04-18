@@ -1,12 +1,15 @@
-
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MoonIcon, SunIcon, Globe } from "lucide-react";
+import { MoonIcon, SunIcon, Globe, LogIn, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { signOut } from "@/services/authService";
 
 export const Header = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const { user } = useAuth();
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -14,6 +17,15 @@ export const Header = () => {
   };
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleAuthAction = async () => {
+    if (user) {
+      await signOut();
+      navigate('/');
+    } else {
+      navigate('/auth');
+    }
+  };
 
   return (
     <header className="flex items-center justify-between px-4 md:px-8 py-4 border-b border-border w-full">
@@ -64,9 +76,19 @@ export const Header = () => {
         <Button variant="ghost" size="icon" className="rounded-full">
           <Globe className="h-5 w-5" />
         </Button>
-        <Link to="/dashboard">
-          <Button className="bg-primary hover:bg-primary/90">Dashboard</Button>
-        </Link>
+        <Button onClick={handleAuthAction} className="bg-primary hover:bg-primary/90">
+          {user ? (
+            <>
+              <LogOut className="mr-2 h-4 w-4" />
+              Đăng xuất
+            </>
+          ) : (
+            <>
+              <LogIn className="mr-2 h-4 w-4" />
+              Đăng nhập
+            </>
+          )}
+        </Button>
       </div>
     </header>
   );
