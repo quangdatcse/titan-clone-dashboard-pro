@@ -1,7 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
 import { VideoRequest, Video } from '@/types/video';
-import { useToast } from '@/hooks/use-toast';
 
 export const createVideo = async (request: VideoRequest): Promise<Video> => {
   const { data, error } = await supabase
