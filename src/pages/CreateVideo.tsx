@@ -1,4 +1,5 @@
-
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -6,13 +7,81 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UploadIcon, ImageIcon, TextIcon, MicIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { createVideo, uploadFile } from "@/services/videoService";
+import type { VideoRequest } from "@/types/video";
 
 const CreateVideo = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'text' | 'image' | 'voice'>('text');
+  const [formData, setFormData] = useState<VideoRequest>({
+    title: '',
+    description: '',
+    style: 'Phong cảnh',
+    type: 'text',
+    content: '',
+  });
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleStyleSelect = (style: string) => {
+    setFormData((prev) => ({ ...prev, style }));
+  };
+
+  const handleFileUpload = async (file: File) => {
+    try {
+      const path = `uploads/${Date.now()}-${file.name}`;
+      const uploadResult = await uploadFile(file, path);
+      if (uploadResult?.path) {
+        setFormData((prev) => ({ ...prev, file_url: path }));
+      }
+    } catch (error) {
+      toast({
+        title: "Lỗi tải lên",
+        description: "Không thể tải lên file. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setIsLoading(true);
+      const videoData = {
+        ...formData,
+        type: activeTab,
+      };
+      await createVideo(videoData);
+      
+      toast({
+        title: "Thành công",
+        description: "Video của bạn đang được xử lý.",
+      });
+      
+      navigate("/dashboard/my-videos");
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể tạo video. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Tạo video mới</h1>
 
-      <Tabs defaultValue="text" className="w-full">
+      <Tabs value={activeTab} onValueChange={(value: 'text' | 'image' | 'voice') => setActiveTab(value)} className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="text" className="flex items-center gap-2">
             <TextIcon className="h-4 w-4" />
@@ -40,12 +109,21 @@ const CreateVideo = () => {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Tiêu đề</Label>
-                  <Input id="title" placeholder="Nhập tiêu đề cho video của bạn" />
+                  <Input 
+                    id="title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    placeholder="Nhập tiêu đề cho video của bạn" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Mô tả</Label>
                   <Textarea
                     id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
                     placeholder="Mô tả chi tiết về video bạn muốn tạo..."
                     rows={5}
                   />
@@ -54,14 +132,23 @@ const CreateVideo = () => {
                   <Label>Phong cách</Label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {["Phong cảnh", "Hoạt hình", "3D", "Thực tế"].map((style) => (
-                      <Button key={style} variant="outline" className="justify-start">
+                      <Button
+                        key={style}
+                        variant={formData.style === style ? "default" : "outline"}
+                        className="justify-start"
+                        onClick={() => handleStyleSelect(style)}
+                      >
                         {style}
                       </Button>
                     ))}
                   </div>
                 </div>
-                <Button className="w-full bg-primary hover:bg-primary/90">
-                  Tạo video
+                <Button 
+                  className="w-full" 
+                  disabled={isLoading || !formData.title || !formData.description}
+                  onClick={handleSubmit}
+                >
+                  {isLoading ? "Đang xử lý..." : "Tạo video"}
                 </Button>
               </div>
             </CardContent>
