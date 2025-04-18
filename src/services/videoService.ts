@@ -1,5 +1,5 @@
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { VideoRequest, Video } from '@/types/video';
 
 export const createVideo = async (request: VideoRequest): Promise<Video> => {
