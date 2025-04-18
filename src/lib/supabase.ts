@@ -16,7 +16,10 @@ if (supabaseUrl && supabaseAnonKey) {
   supabase = {
     from: () => ({
       insert: () => Promise.resolve({ data: null, error: new Error('Supabase chưa được cấu hình') }),
-      select: () => ({ single: () => Promise.resolve({ data: null, error: new Error('Supabase chưa được cấu hình') }) }),
+      select: () => ({ 
+        single: () => Promise.resolve({ data: null, error: new Error('Supabase chưa được cấu hình') }),
+        order: () => ({ limit: () => Promise.resolve({ data: [], error: null }) }),
+      }),
     }),
     storage: {
       from: () => ({
@@ -24,7 +27,12 @@ if (supabaseUrl && supabaseAnonKey) {
       }),
     },
     auth: {
-      signIn: () => Promise.resolve({ data: null, error: new Error('Supabase chưa được cấu hình') }),
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      onAuthStateChange: (callback) => {
+        // Trả về một đối tượng subscription giả
+        return { data: { subscription: { unsubscribe: () => {} } } };
+      },
+      signInWithPassword: () => Promise.resolve({ data: null, error: new Error('Supabase chưa được cấu hình') }),
       signUp: () => Promise.resolve({ data: null, error: new Error('Supabase chưa được cấu hình') }),
       signOut: () => Promise.resolve({ error: null }),
     },

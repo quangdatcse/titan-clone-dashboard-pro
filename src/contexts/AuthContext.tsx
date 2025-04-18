@@ -16,10 +16,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     // Kiểm tra phiên hiện tại
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const checkSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error checking session:', error);
+          return;
+        }
+        setUser(data.session?.user ?? null);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to check session:', err);
+        setLoading(false);
+      }
+    };
+    
+    checkSession();
 
     // Lắng nghe thay đổi auth state
     const {
