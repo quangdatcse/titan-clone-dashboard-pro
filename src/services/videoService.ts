@@ -3,11 +3,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { VideoRequest, Video } from '@/types/video';
 
 export const createVideo = async (request: VideoRequest): Promise<Video> => {
+  // Get the current user
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+  
   const { data, error } = await supabase
     .from('videos')
     .insert([
       {
         ...request,
+        user_id: user.id,
         status: 'processing',
       },
     ])
@@ -18,7 +26,7 @@ export const createVideo = async (request: VideoRequest): Promise<Video> => {
     throw new Error(error.message);
   }
 
-  return data;
+  return data as Video;
 };
 
 export const uploadFile = async (file: File, path: string) => {
